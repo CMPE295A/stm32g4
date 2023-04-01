@@ -219,6 +219,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
+  //  // USART1_TX (A9)
+  GPIOA->MODER &= ~(3 << 18);
+  GPIOA->MODER |= (2 << 18); // alternate function
+  GPIOA->OTYPER &= ~(1 << 9); // push-pull
+  GPIOA->PUPDR &= ~(3 << 18); // no pull
+  GPIOA->OSPEEDR &= ~(3 << 18); //
+  GPIOA->OSPEEDR |= (3 << 18); // very high frequency
+  GPIOA->AFR[1] |= (7 << 4);
+  //
+  //  // USART2_RX (A10)
+  GPIOA->MODER &= ~(3 << 20);
+  GPIOA->MODER |= (2 << 20); // alternate function
+  GPIOA->OTYPER &= ~(1 << 10); // push-pull
+  GPIOA->PUPDR &= ~(3 << 20); // no pull
+  GPIOA->OSPEEDR &= ~(3 << 20);
+  GPIOA->OSPEEDR |= (3 << 20); // very high frequency
+  GPIOA->AFR[1] |= (7 << 8);
+
 }
 
 /* USER CODE BEGIN 4 */
