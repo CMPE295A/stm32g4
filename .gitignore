@@ -67,3 +67,6 @@ ctrlp.root
 # system specific project settings
 *.project
 *.mxproject
+
+.settings/*
+Debug/*
