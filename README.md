@@ -6,5 +6,5 @@
 3. File >> "Open Projects from File System..."
 4. Click "Directory" and select the stm32g4 folder that you just cloned and click "Finish".
 5. In the "Project Explorer" window select the stm32g4 project and click "New C/C++ Project" in the toolbar.
-  ![alt text](https://drive.google.com/file/d/1NyKdnC2qbSvKrX2wBSvedt_WLnUQkODS/view?usp=share_link)
+  ![import](import.png)
 6. Project should now be ready to build and run
