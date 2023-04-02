@@ -101,7 +101,7 @@ uint8_t uart__get_char(uint8_t id)
 	return c;
 }
 
-void uart__put_tx(uint8_t id, uint8_t *buff, uint16_t size)
+void uart__put(uint8_t id, uint8_t *buff, uint16_t size)
 {
 	for(uint16_t i = 0; i < size; i++)
 	{
