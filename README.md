@@ -3,7 +3,8 @@
 ## To Import project into STM32CubeIDE:
 1. Clone repo into your file system
 2. Open STM32CubeIDE
-3. File >> New >> STM32 Project from an Existing STM32CubeMX Configuration File (.ioc)
-4. In the File section, click browse and select the .ioc in the root of the repository
-5. Continue with all defaults
-6. If imported properly, you should be able to build the project and flash it to the board
+3. File >> "Open Projects from File System..."
+4. Click "Directory" and select the stm32g4 folder that you just cloned and click "Finish".
+5. In the "Project Explorer" window select the stm32g4 project and click "New C/C++ Project" in the toolbar.
+  ![alt text](https://drive.google.com/file/d/1NyKdnC2qbSvKrX2wBSvedt_WLnUQkODS/view?usp=share_link)
+6. Project should now be ready to build and run
