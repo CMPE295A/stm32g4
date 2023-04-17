@@ -24,17 +24,17 @@ bool timer__initialize(uint8_t id)
 	bool initialized = false;
 	switch(id)
 	{
-	case DRIVER_TIMER_2:
+	case DRIVER_TIMER2:
 		RCC->APB1ENR1 |= RCC_APB1ENR1_TIM2EN;
 		NVIC->ISER[(TIM2_IRQn / 32)] |= (1 << (TIM2_IRQn % 32));
 		break;
 
-	case DRIVER_TIMER_3:
+	case DRIVER_TIMER3:
 		RCC->APB1ENR1 |= RCC_APB1ENR1_TIM3EN;
 		NVIC->ISER[(TIM3_IRQn / 32)] |= (1 << (TIM3_IRQn % 32));
 		break;
 
-	case DRIVER_TIMER_4:
+	case DRIVER_TIMER4:
 		RCC->APB1ENR1 |= RCC_APB1ENR1_TIM4EN;
 		NVIC->ISER[(TIM4_IRQn / 32)] |= (1 << (TIM4_IRQn % 32));
 			break;
@@ -47,12 +47,13 @@ bool timer__initialize(uint8_t id)
 	{
 		timer[id].ms_count = 0;
 		timer[id].last_ms_count = 0;
-		uint16_t divisor_ms = TIMER_CLOCK_HZ / TIMER_MS_PER_SECOND;
+		uint32_t divisor_ms = TIMER_CLOCK_HZ / TIMER_MS_PER_SECOND;
 
 		// configure for
-		timer[id].regs->CNT = divisor_ms;
-		timer[id].regs->DIER |=
-		timer[id].regs->CCR1 |= TIM_CR1_CEN;
+		timer[id].regs->CR1 |= TIM_CR1_URS;
+		timer[id].regs->ARR = divisor_ms;
+		timer[id].regs->DIER |= TIM_DIER_UIE;
+		timer[id].regs->CR1 |= TIM_CR1_CEN;
 		initialized = true;
 	}
 
@@ -86,19 +87,20 @@ uint32_t timer__get_ms(uint8_t id)
 void timer__interrupt_handler(uint8_t id)
 {
 	timer[id].ms_count++;
+	timer[id].regs->SR &= ~TIM_SR_UIF;
 }
 
 void TIM2_IRQHandler(void)
 {
-	timer__interrupt_handler(DRIVER_TIMER_2);
+	timer__interrupt_handler(DRIVER_TIMER2);
 }
 
 void TIM3_IRQHandler(void)
 {
-	timer__interrupt_handler(DRIVER_TIMER_3);
+	timer__interrupt_handler(DRIVER_TIMER3);
 }
 
 void TIM4_IRQHandler(void)
 {
-	timer__interrupt_handler(DRIVER_TIMER_4);
+	timer__interrupt_handler(DRIVER_TIMER4);
 }
