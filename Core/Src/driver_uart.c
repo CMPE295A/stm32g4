@@ -3,9 +3,6 @@
 #include "stm32g4xx_hal.h"
 
 static const uint32_t UART_CLOCK_HZ = 170000000;
-#define USART1_ISR_NUMBER 37
-#define USART2_ISR_NUMBER 38
-#define USART3_ISR_NUMBER 39
 #define BUFFER_SIZE 1028
 #define FIFO_SIZE 8
 
@@ -42,19 +39,19 @@ bool uart__initialize(uint8_t id, uint32_t baudrate)
 	case DRIVER_UART1:
 	{
 		RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
-		NVIC->ISER[(USART1_ISR_NUMBER / 32)] |= (1 << (USART1_ISR_NUMBER % 32));
+		NVIC->ISER[(USART1_IRQn / 32)] |= (1 << (USART1_IRQn % 32));
 		break;
 	}
 	case DRIVER_UART2:
 	{
 		RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
-		NVIC->ISER[(USART2_ISR_NUMBER / 32)] |= (1 << (USART2_ISR_NUMBER % 32));
+		NVIC->ISER[(USART2_IRQn / 32)] |= (1 << (USART2_IRQn % 32));
 		break;
 	}
 	case DRIVER_UART3:
 	{
 		RCC->APB1ENR1 |= RCC_APB1ENR1_USART3EN;
-		NVIC->ISER[(USART3_ISR_NUMBER / 32)] |= (1 << (USART3_ISR_NUMBER % 32));
+		NVIC->ISER[(USART3_IRQn / 32)] |= (1 << (USART3_IRQn % 32));
 		break;
 	}
 	}

@@ -1,3 +1,6 @@
+#ifndef DRIVER_UART_H
+#define DRIVER_UART_H
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -19,3 +22,5 @@ uint8_t uart__get_char(uint8_t id);
 void USART1_IRQHandler(void);
 void USART2_IRQHandler(void);
 void USART3_IRQHandler(void);
+
+#endif // DRIVER_UART_H
