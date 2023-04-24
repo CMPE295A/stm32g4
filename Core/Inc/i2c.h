@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include "stm32g431xx.h"
 
-void i2c__initialize(uint32_t desired_i2c_bus_speed_in_hz, uint32_t peripheral_clock_hz);
+void i2c__initialize();
 
 /**
  * @returns true if the I2C device at the given address responds back with an ACK
