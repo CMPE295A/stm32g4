@@ -1,5 +1,5 @@
 /*
- * i2c.h
+ * driver_i2c.c
  *
  *  Created on: March 21, 2023
  *      Author: Jasdip Sekhon
