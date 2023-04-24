@@ -73,7 +73,7 @@ uint8_t i2c__read_slave_data(uint8_t slave_address, uint8_t register_address) {
 	return data;
 }
 
-uint8_t i2c__write_slave_data(uint8_t slave_address, uint8_t register_address, uint8_t data) {
+void i2c__write_slave_data(uint8_t slave_address, uint8_t register_address, uint8_t data) {
 	// TODO
 }
 
