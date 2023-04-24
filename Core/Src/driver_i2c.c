@@ -5,7 +5,7 @@
  *      Author: Jasdip Sekhon
  */
 
-#include "i2c.h"
+#include "driver_i2c.h"
 
 typedef struct {
   I2C_TypeDef *const registers; // STM32 memory mapped registers for the I2C bus
