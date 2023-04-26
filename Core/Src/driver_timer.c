@@ -27,6 +27,7 @@ bool timer__initialize(uint8_t id)
 	case DRIVER_TIMER2:
 		RCC->APB1ENR1 |= RCC_APB1ENR1_TIM2EN;
 		NVIC->ISER[(TIM2_IRQn / 32)] |= (1 << (TIM2_IRQn % 32));
+		NVIC->IP[TIM2_IRQn] |= 0x20;
 		break;
 
 	case DRIVER_TIMER3:

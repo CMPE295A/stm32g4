@@ -19,7 +19,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "driver_uart.h"
+#include "driver_timer.h"
 #include "cmox_crypto.h"
+#include "interface_esp8266.h"
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -50,6 +53,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void process_cli(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -87,7 +91,9 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  uart__initialize(DRIVER_UART1, 115200);
+  esp8266__initialize();
+  timer__initialize(DRIVER_TIMER2);
+  uint16_t count = 0;
 
   /* USER CODE BEGIN 2 */
 
@@ -97,11 +103,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  uint8_t c = uart__get_char(DRIVER_UART1);
-	  if(c != NO_CHAR_AVAILABLE)
+	  esp8266__process();
+	  if(timer__ms_elapsed(DRIVER_TIMER2))
 	  {
-		  // echo
-		  uart__put(DRIVER_UART1, &c, 1);
+		  if(++count == 1000)
+		  {
+			  count = 0;
+			  esp8266__send_test_string();
+		  }
 	  }
     /* USER CODE END WHILE */
 
@@ -197,6 +206,35 @@ static void MX_GPIO_Init(void)
   GPIOA->OSPEEDR |= (3 << 20); // very high frequency
   GPIOA->AFR[1] |= (7 << 8);
 
+//  //  // USART2_TX (A2)
+//  GPIOA->MODER &= ~(3 << 4);
+//  GPIOA->MODER |= (2 << 4); // alternate function
+//  GPIOA->OTYPER &= ~(1 << 2); // push-pull
+//  GPIOA->PUPDR &= ~(3 << 4); // no pull
+//  GPIOA->OSPEEDR &= ~(3 << 4); //
+//  GPIOA->OSPEEDR |= (3 << 4); // very high frequency
+//  GPIOA->AFR[1] |= (7 << 8);
+//  //
+//  //  // USART2_RX (A3)
+//  GPIOA->MODER &= ~(3 << 6);
+//  GPIOA->MODER |= (2 << 6); // alternate function
+//  GPIOA->OTYPER &= ~(1 << 3); // push-pull
+//  GPIOA->PUPDR &= ~(3 << 6); // no pull
+//  GPIOA->OSPEEDR &= ~(3 << 6);
+//  GPIOA->OSPEEDR |= (3 << 6); // very high frequency
+//  GPIOA->AFR[1] |= (7 << 12);
+}
+
+static void process_cli(void)
+{
+	static uint16_t index = 0;
+	static char buff[1024] = {0};
+	uint8_t c = uart__get_char(DRIVER_UART1);
+	if(c != NO_CHAR_AVAILABLE)
+	{
+	  // echo
+	  uart__put(DRIVER_UART1, &c, 1);
+	}
 }
 
 /* USER CODE BEGIN 4 */
