@@ -74,7 +74,13 @@ uint8_t i2c__read_slave_data(uint8_t slave_address, uint8_t register_address) {
 }
 
 void i2c__write_slave_data(uint8_t slave_address, uint8_t register_address, uint8_t data) {
-	// TODO
+	while((I2C1->ISR & I2C_ISR_BUSY) == I2C_ISR_BUSY); // Wait until I2C bus is ready
+        I2C1->CR2 = (slave_address << 1) | I2C_CR2_AUTOEND | ((0x2 << I2C_CR2_NBYTES_Pos)); // Send start condition and slave address
+    	I2C1->CR2 |= I2C_CR2_START;
+    	while((I2C1->ISR & I2C_ISR_TXIS) == 0);  // Wait for TXIS flag to be set (transmit register address)
+    	I2C1->TXDR = reg_address;                // Write the register address to the DR register
+    	while((I2C1->ISR & I2C_ISR_TXIS) == 0);  // Wait for TXIS flag to be set (transmit data)
+    	I2C1->TXDR = data; 						 // Write the data to the DR register
+    	while((I2C1->ISR & I2C_ISR_STOPF) == 0); // Wait for STOP flag to be set
+    	I2C1->ICR |= I2C_ICR_STOPCF;             // Clear the STOP flag by writing 0 to it
 }
-
-
