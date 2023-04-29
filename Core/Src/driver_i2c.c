@@ -72,10 +72,10 @@ static void congifure_I2C_clock(void) {
 
 	// Configure I2C1_TIMINGR for 100KHz speed
 	I2C1->TIMINGR = (prescaler << 28) |
-					(SCLDEL << 20) |
-					(SDADEL << 16) |
-					(SCLH << 8) |
-					(SCLL);
+			(SCLDEL << 20) |
+			(SDADEL << 16) |
+			(SCLH << 8) |
+			(SCLL);
 }
 
 void i2c__initialize(void) {
