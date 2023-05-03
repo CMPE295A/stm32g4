@@ -5,7 +5,7 @@
  *      Author: Jasdip Sekhon
  */
 
-#include "i2c.h"
+#include "driver_i2c.h"
 
 //volatile i2c_state_e i2c_state = I2C__STATE_IDLE;
 static uint8_t received_data;
