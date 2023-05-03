@@ -1,5 +1,4 @@
-#ifndef INTERFACE_ESP8266_H
-#define INTERFACE_ESP8266_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -21,7 +20,6 @@ enum
 bool esp8266__initialize(void);
 void esp8266__process(void);
 void esp8266__get_packet(char *packet, uint16_t size);
-bool esp8266__send_string(char *str);
+void esp8266__send_string(char *str);
 void esp8266__send_test_string(void);
 
-#endif // INTERFACE_ESP8266_H

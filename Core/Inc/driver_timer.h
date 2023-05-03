@@ -1,5 +1,4 @@
-#ifndef DRIVER_TIMER_H
-#define DRIVER_TIMER_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -20,5 +19,3 @@ uint32_t timer__get_ms(uint8_t id);
 void TIM2_IRQHandler(void);
 void TIM3_IRQHandler(void);
 void TIM4_IRQHandler(void);
-
-#endif // DRIVER_TIMER_H
