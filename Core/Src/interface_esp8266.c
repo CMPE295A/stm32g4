@@ -151,9 +151,8 @@ void esp8266__send_test_string(void)
 	}
 }
 
-bool esp8266__send_string(char *str)
+void esp8266__send_string(char *str)
 {
-	bool sent = false;
 	if(state == INTERFACE_ESP8266_NETWORK_UP)
 	{
 		uint16_t prefix_len = strlen(AT_CMD_SEND_PREFIX);
@@ -175,10 +174,8 @@ bool esp8266__send_string(char *str)
 			string_to_send[0] = '>';
 			memcpy(&string_to_send[1], str, strlen(str));
 			send_at_cmd(string_to_send);
-			sent = true;
 		}
 	}
-	return sent;
 }
 
 static bool line_is(const char *str)
