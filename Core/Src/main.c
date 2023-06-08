@@ -95,6 +95,11 @@ int main(void)
   timer__initialize(DRIVER_TIMER2);
   uint16_t count = 0;
 
+  if (cmox_initialize(NULL) != CMOX_INIT_SUCCESS)
+  {
+    Error_Handler();
+  }
+
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
