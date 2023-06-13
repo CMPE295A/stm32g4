@@ -5,7 +5,7 @@
  *      Author: Jasdip Sekhon
  */
 
-#include "driver_i2c.h"
+#include "i2c.h"
 
 volatile i2c_state_e i2c_state = I2C__STATE_IDLE;
 static uint8_t received_data;
@@ -15,6 +15,7 @@ static volatile bool repeated_start_complete = false;
 static volatile bool register_addr_sent = false;
 static volatile bool slave_ack = false;
 static volatile bool stop_condition_complete = false;
+
 /*
  * State Machine
  * START Condition -> SAD + Write -> Wait for ACK -> Send Register Address as Data -> Wait for ACK ->
@@ -126,12 +127,12 @@ static volatile bool stop_condition_complete = false;
 //	}
 //}
 
-void i2c__state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t register_address, uint32_t bytes_to_read) {
+void i2c__state_machine(uint8_t slave_address, uint8_t register_address, uint32_t bytes_to_read) {
 	if (slave_address > 127) {
 		I2C1->CR2 |= I2C_CR2_STOP;
-		*i2c_state = I2C__STATE_ERROR;
+		i2c_state = I2C__STATE_ERROR;
 	}
-	switch(*i2c_state) {
+	switch(i2c_state) {
 	case I2C__STATE_IDLE:
 		break;
 
@@ -139,7 +140,7 @@ void i2c__state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t r
 		while (!(I2C1->ISR & I2C_ISR_BUSY)); // TODO: replace w/ ISR
 		I2C1->CR2 |= I2C_CR2_START; // Send start condition
 		if (start_condition_complete) {
-			*i2c_state = I2C__STATE_SEND_SLAVE_ADDR_WITH_WRITE;
+			i2c_state = I2C__STATE_SEND_SLAVE_ADDR_WITH_WRITE;
 			start_condition_complete = false;
 		}
 		break;
@@ -148,10 +149,10 @@ void i2c__state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t r
 		I2C1->CR2 = (slave_address << 1) & ~I2C_CR2_RD_WRN; // Send slave address with write bit set
 		if (I2C1->ISR & (I2C_ISR_NACKF | I2C_ISR_ARLO | I2C_ISR_BERR)) { // Slave NACK or arbitration lost
 			I2C1->CR2 |= I2C_CR2_STOP;
-			*i2c_state = I2C__STATE_ERROR;
+			i2c_state = I2C__STATE_ERROR;
 		    break;
 		}
-		*i2c_state = I2C__STATE_SEND_REGISTER_ADDR;
+		i2c_state = I2C__STATE_SEND_REGISTER_ADDR;
 		break;
 
 	case I2C__STATE_SEND_REGISTER_ADDR:
@@ -159,10 +160,10 @@ void i2c__state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t r
 		if (register_addr_sent) {
 			if (I2C1->ISR & (I2C_ISR_NACKF)) {  // Slave NACK
 				I2C1->CR2 |= I2C_CR2_STOP;
-				*i2c_state = I2C__STATE_ERROR;
+				i2c_state = I2C__STATE_ERROR;
 				break;
 			}
-			*i2c_state = I2C__STATE_REPEATED_START_CONDITION;
+			i2c_state = I2C__STATE_REPEATED_START_CONDITION;
 			register_addr_sent = false;
 		}
 		break;
@@ -170,7 +171,7 @@ void i2c__state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t r
 	case I2C__STATE_REPEATED_START_CONDITION:
 		I2C1->CR2 |= I2C_CR2_START; // Send repeated start condition
 		if (repeated_start_complete) {
-			*i2c_state = I2C__STATE_SEND_SLAVE_ADDR_WITH_READ;
+			i2c_state = I2C__STATE_SEND_SLAVE_ADDR_WITH_READ;
 		    repeated_start_complete = false;
 		    }
 		break;
@@ -180,17 +181,17 @@ void i2c__state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t r
 		if (slave_ack) { // Wait for slave ACK
 			if (I2C1->ISR & (I2C_ISR_NACKF | I2C_ISR_ARLO | I2C_ISR_BERR)) { // Slave NACK or arbitration lost
 				I2C1->CR2 |= I2C_CR2_STOP;
-				*i2c_state = I2C__STATE_ERROR;
+				i2c_state = I2C__STATE_ERROR;
 				break;
 			}
-			*i2c_state = I2C__STATE_RECEIVE_DATA;
+			i2c_state = I2C__STATE_RECEIVE_DATA;
 			slave_ack = false;
 		}
 		break;
 
 	case I2C__STATE_RECEIVE_DATA:
 		if (data_received_flag) {
-			*i2c_state = I2C__STATE_REPEATED_START_CONDITION;
+			i2c_state = I2C__STATE_REPEATED_START_CONDITION;
 			data_received_flag = false;
 		}
 		break;
@@ -200,12 +201,12 @@ void i2c__state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t r
 		if (stop_condition_complete) {
 			I2C1->ICR &= ~(I2C_ICR_ADDRCF | I2C_ICR_NACKCF | I2C_ICR_STOPCF | I2C_ICR_BERRCF // Clear pending flags in ICR register
 				| I2C_ICR_ARLOCF | I2C_ICR_OVRCF| I2C_ICR_PECCF | I2C_ICR_TIMOUTCF | I2C_ICR_ALERTCF);
-			*i2c_state = I2C__STATE_IDLE;
+			i2c_state = I2C__STATE_IDLE;
 			}
 		break;
 
 	case I2C__STATE_ERROR:
-		*i2c_state = I2C__STATE_IDLE;
+		i2c_state = I2C__STATE_IDLE;
 		break;
 	}
 }
@@ -213,22 +214,22 @@ void i2c__state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t r
 
 void I2C1_EV_IRQHandler(void) {
 	// I2C__STATE_START
-	if (*i2c_state == I2C__STATE_START && !(I2C1->ISR & I2C_ISR_BUSY)) { // Wait for start condition to be sent
+	if (i2c_state == I2C__STATE_START && !(I2C1->ISR & I2C_ISR_BUSY)) { // Wait for start condition to be sent
 		start_condition_complete = true;
 	}
 
 	// I2C__STATE_SEND_SLAVE_ADDR_WITH_WRITE
-	if (*i2c_state == I2C__STATE_SEND_SLAVE_ADDR_WITH_WRITE && !(I2C1->ISR & I2C_ISR_ADDR)) { // slave ACK
+	if (i2c_state == I2C__STATE_SEND_SLAVE_ADDR_WITH_WRITE && !(I2C1->ISR & I2C_ISR_ADDR)) { // slave ACK
 		I2C1->ICR |= I2C_ICR_ADDRCF; // Clear ADDR flag
 	}
 
 	// I2C__STATE_SEND_REGISTER_ADDR
-	if (*i2c_state == I2C__STATE_SEND_REGISTER_ADDR && !(I2C1->ISR & I2C_ISR_TXE)) {
+	if (i2c_state == I2C__STATE_SEND_REGISTER_ADDR && !(I2C1->ISR & I2C_ISR_TXE)) {
 		register_addr_sent = true;
 	}
 
 	// I2C__STATE_RECEIVE_DATA
-	if (*i2c_state == I2C__STATE_RECEIVE_DATA && !(I2C1->ISR & I2C_ISR_RXNE)) {
+	if (i2c_state == I2C__STATE_RECEIVE_DATA && !(I2C1->ISR & I2C_ISR_RXNE)) {
 		received_data = I2C1->RXDR; // Read data
 		I2C1->CR2 &= ~I2C_CR2_NACK; // ACK
 		I2C1->CR1 &= ~I2C_CR1_RXIE; // Disable RXNE interrupt
@@ -236,16 +237,16 @@ void I2C1_EV_IRQHandler(void) {
 	}
 
 	// I2C__STATE_REPEATED_START_CONDITION
-	if (*i2c_state == I2C__STATE_REPEATED_START_CONDITION && !(I2C1->ISR & I2C_ISR_BUSY)) { // Wait for START to be sent
+	if (i2c_state == I2C__STATE_REPEATED_START_CONDITION && !(I2C1->ISR & I2C_ISR_BUSY)) { // Wait for START to be sent
 		repeated_start_complete = true;
 	}
 
 	// I2C__STATE_SEND_SLAVE_ADDR_WITH_READ
-	if (*i2c_state == I2C__STATE_SEND_SLAVE_ADDR_WITH_READ && !(I2C1->ISR & I2C_ISR_ADDR)) { // Wait for slave ACK
+	if (i2c_state == I2C__STATE_SEND_SLAVE_ADDR_WITH_READ && !(I2C1->ISR & I2C_ISR_ADDR)) { // Wait for slave ACK
 		slave_ack = true;
 	}
 
-	if (*i2c_state == I2C__STATE_STOP && !(I2C1->ISR & I2C_ISR_STOPF)) { // Wait for STOP condition to be cleared internally
+	if (i2c_state == I2C__STATE_STOP && !(I2C1->ISR & I2C_ISR_STOPF)) { // Wait for STOP condition to be cleared internally
 		stop_condition_complete = true;
 	}
 }
@@ -339,22 +340,22 @@ bool i2c__detect(void) {
 uint8_t i2c__read_slave_data_state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t register_address, uint32_t number_of_bytes) {
     *i2c_state = I2C__STATE_START;
     I2C1->CR1 |= I2C_CR1_RXIE | I2C_CR1_TCIE | I2C_CR1_STOPIE | I2C_CR1_NACKIE | I2C_CR1_ERRIE; // Enable I2C interrupts
-    i2c__state_machine(i2c_state, slave_address, register_address, number_of_bytes); // Send data to slave
+    i2c__state_machine(slave_address, register_address, number_of_bytes); // Send data to slave
     while (i2c_state != I2C__STATE_IDLE); // Wait for completion
     I2C1->CR1 &= ~(I2C_CR1_RXIE | I2C_CR1_TCIE | I2C_CR1_STOPIE | I2C_CR1_NACKIE | I2C_CR1_ERRIE); // Disable I2C interrupts
     return received_data;
 }
 
 uint8_t i2c__read_slave_data(uint8_t slave_address, uint8_t register_address) {
-	uint8_t data = 0;
-	I2C1->CR2 = (slave_address << 1) | I2C_CR2_START | I2C_CR2_AUTOEND; // Send start condition and slave address with write bit
-	while (!(I2C1->ISR & I2C_ISR_TXIS)); // Wait for end of address transmission
-	I2C1->TXDR = register_address;       // Send register address
-	while (!(I2C1->ISR & I2C_ISR_TC));   // Wait for end of data transmission
-	I2C1->CR2 = (slave_address << 1) | I2C_CR2_RD_WRN | I2C_CR2_START | I2C_CR2_AUTOEND; // Send start and request read
-	while (!(I2C1->ISR & I2C_ISR_RXNE)); // Wait for end of address transmission
-	data = I2C1->RXDR;
-	return data;
+    uint8_t data = 0;
+    I2C1->CR2 = (slave_address << 1) | I2C_CR2_START | I2C_CR2_AUTOEND; // Send start condition and slave address with write bit
+    while (!(I2C1->ISR & I2C_ISR_TXIS)); // Wait for end of address transmission
+    I2C1->TXDR = register_address;       // Send register address
+    while (!(I2C1->ISR & I2C_ISR_TC));   // Wait for end of data transmission
+    I2C1->CR2 = (slave_address << 1) | I2C_CR2_RD_WRN | I2C_CR2_START | I2C_CR2_AUTOEND; // Send start and request read
+    while (!(I2C1->ISR & I2C_ISR_RXNE)); // Wait for end of address transmission
+    data = I2C1->RXDR;
+    return data;
 }
 
 void i2c__write_slave_data(uint8_t slave_address, uint8_t register_address, uint8_t data) {
