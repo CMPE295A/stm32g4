@@ -21,7 +21,7 @@
 #include "driver_uart.h"
 #include "driver_timer.h"
 #include "cmox_crypto.h"
-#include "interface_esp8266.h"
+#include "interface_at_command.h"
 #include <string.h>
 
 /* Private includes ----------------------------------------------------------*/

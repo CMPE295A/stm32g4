@@ -3,7 +3,7 @@
  * from the esp8266 and places them in a packet buffer
  */
 
-#include "interface_esp8266.h"
+#include "interface_at_command.h"
 #include "driver_uart.h"
 #include <string.h>
 #include <stdio.h>
