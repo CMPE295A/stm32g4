@@ -48,51 +48,9 @@ static void timer__set_pwm_configuration(void) {
 
     // Set the output idle state to reset
     TIM1->CR2 &= ~TIM_CR2_OIS1;
-
-    // Set the complementary output idle state to reset (if needed)
-    TIM1->CR2 &= ~TIM_CR2_OIS1N;
 }
 
-void timer__set_break_dead_time_configuration(void) {
-    // Disable OffState Run mode
-    TIM1->BDTR &= ~TIM_BDTR_OSSR;
 
-    // Disable OffState IDLE mode
-    TIM1->BDTR &= ~TIM_BDTR_OSSI;
-
-    // Set Lock Level to OFF
-    TIM1->BDTR &= ~TIM_BDTR_LOCK;
-
-
-    // Disable Break state
-    TIM1->BDTR &= ~TIM_BDTR_BKE;
-
-    // Set Break polarity to high
-    TIM1->BDTR &= ~TIM_BDTR_BKP;
-
-    // Set Break filter to 0 (no filter)
-    TIM1->BDTR &= ~TIM_BDTR_BKF;
-    TIM1->BDTR |= (0 << TIM_BDTR_BKF_Pos);
-
-    // Set Break AF mode to input
-    TIM1->BDTR &= ~TIM_BDTR_BK2F;
-
-    // Disable Break2 state
-    TIM1->BDTR &= ~TIM_BDTR_BK2E;
-
-    // Set Break2 polarity to high
-    TIM1->BDTR &= ~TIM_BDTR_BK2P;
-
-    // Set Break2 filter to 0 (no filter)
-    TIM1->BDTR &= ~TIM_BDTR_BK2F;
-    TIM1->BDTR |= (0 << TIM_BDTR_BK2F_Pos);
-
-    // Set Break2 AF mode to input
-    TIM1->BDTR &= ~TIM_BDTR_BK2E;
-
-    // Disable Automatic Output
-    TIM1->BDTR &= ~TIM_BDTR_AOE;
-}
 
 void timer__initialize(void) {
 	set_gpio_pins();
@@ -117,7 +75,6 @@ void timer__initialize(void) {
 	TIM1->SMCR &= ~TIM_SMCR_MSM;
 
 	timer__set_pwm_configuration();
-	timer__set_break_dead_time_configuration();
 
 	TIM1->CCMR1 |= (0x6 << TIM_CCMR1_OC1M_Pos) | (0x1 << TIM_CCMR1_OC1PE_Pos); // Mode 1; channel 1 active when TIMx_CNT<TIMx_CCR1
 	TIM1->EGR |= TIM_EGR_UG; // Reinitialize the counter
