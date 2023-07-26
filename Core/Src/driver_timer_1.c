@@ -140,3 +140,4 @@ void TIM1_IRQHandler(void) {
 	// Handle the timer interrupt here
 	TIM1->SR &= ~TIM_SR_UIF;
 }
+
