@@ -50,8 +50,6 @@ static void timer__set_pwm_configuration(void) {
     TIM1->CR2 &= ~TIM_CR2_OIS1;
 }
 
-
-
 void timer__initialize(void) {
 	set_gpio_pins();
 	start_clock();
