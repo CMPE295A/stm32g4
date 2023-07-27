@@ -20,9 +20,9 @@ enum
 	AT_INTERFACE_NUM_STATES
 };
 
-bool esp8266__initialize(void);
-void esp8266__process(void);
-void esp8266__get_packet(char *packet, uint16_t size);
-void esp8266__send_string(char *str);
-void esp8266__send_test_string(void);
+bool at_interface__initialize(void);
+void at_interface__process(void);
+void at_interface__get_packet(char *packet, uint16_t size);
+void at_interface__send_string(char *str);
+void at_interface__send_test_string(void);
 

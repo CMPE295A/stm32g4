@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define ESP8266_UART DRIVER_UART1
+#define AT_MODEM_UART DRIVER_UART1
 #define LINE_BUFFER_MAX 5
 #define LINE_MAX_LEN 512
 
@@ -19,7 +19,7 @@ static const char AT_CMD_TEST[] = "AT\r\n";
 static const char AT_CMD_MODE[] = "AT+CWMODE_CUR=1\r\n";
 static const char AT_CMD_LIST_AP[] = "AT+CWLAP\r\n";
 //static const char AT_CMD_SSID[] = "AT+CWJAP_CUR=\"MyBaloneysFirstName\",\"BernieLocke\",\"ce:9e:43:c4:13:ed\"\r\n";
-static const char AT_CMD_SSID[] = "AT+CWJAP_CUR=\"scott_hotspot\",\"20jack23\",\"02:5d:52:2f:07:b5d\"\r\n";
+static const char AT_CMD_SSID[] = "AT+CWJAP_CUR=\"scott_hotspot\",\"20jack23\",\"02:5d:52:2f:07:b5\"\r\n";
 static const char AT_CMD_DHCP[] = "AT+CWDHCP_CUR=1,1\r\n";
 
 static const char AT_CMD_MQTT_SETUP[] = "AT+MQTTSET=\"username\",\"passwd\",\"D1\",60\r\n";
@@ -58,16 +58,16 @@ static uint32_t send_count = 0;
 
 
 
-bool esp8266__initialize(void)
+bool at_interface__initialize(void)
 {
 	// connect to esp8266
-	bool initialized = uart__initialize(ESP8266_UART, 115200);
+	bool initialized = uart__initialize(AT_MODEM_UART, 115200);
 	send_at_cmd(AT_CMD_ECHO_OFF);
 //	send_at_cmd(AT_CMD_TEST);
 	return initialized;
 }
 
-void esp8266__process(void)
+void at_interface__process(void)
 {
 	// called at user level fast loop
 	read();
@@ -101,8 +101,8 @@ void esp8266__process(void)
 	case AT_INTERFACE_SET_DHCP:
 		if(line_is(AT_RESPONSE_OK))
 		{
-			send_at_cmd(AT_CMD_SSID);
-			state = AT_INTERFACE_SSID;
+			send_at_cmd(AT_CMD_LIST_AP);
+			state = AT_INTERFACE_LIST_AP;
 		}
 		break;
 
@@ -155,12 +155,12 @@ void esp8266__process(void)
 	}
 }
 
-void esp8266__get_packet(char *packet, uint16_t size)
+void at_interface_get_packet(char *packet, uint16_t size)
 {
 	// pull last packet from buffer
 }
 
-void esp8266__send_test_string(void)
+void at_interface__send_test_string(void)
 {
 	static bool init = true;
 	static bool one = true;
@@ -188,7 +188,7 @@ void esp8266__send_test_string(void)
 	}
 }
 
-void esp8266__send_string(char *str)
+void at_interface__send_string(char *str)
 {
 	if(state == AT_INTERFACE_NETWORK_UP)
 	{
@@ -228,7 +228,7 @@ static bool line_is(const char *str)
 
 static void read(void)
 {
-	char c = (char)uart__get_char(ESP8266_UART);
+	char c = (char)uart__get_char(AT_MODEM_UART);
 	while(c != NO_CHAR_AVAILABLE)
 	{
 		if(c != '\r' && c != '\n')
@@ -253,12 +253,12 @@ static void read(void)
 				char_index = 0;
 			}
 		}
-		c = uart__get_char(ESP8266_UART);
+		c = uart__get_char(AT_MODEM_UART);
 	}
 }
 
 static void send_at_cmd(const char *cmd)
 {
 	uint16_t len = strlen(cmd);
-	uart__put(ESP8266_UART, (uint8_t*)cmd, len);
+	uart__put(AT_MODEM_UART, (uint8_t*)cmd, len);
 }

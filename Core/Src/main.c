@@ -67,6 +67,19 @@ static void process_cli(void);
   * @brief  The application entry point.
   * @retval int
   */
+
+void wait_ms(int ms_wait_threshold)
+{
+	  uint16_t modem_reset_count = 0;
+	  while(modem_reset_count < ms_wait_threshold)
+	  {
+		  if(timer__ms_elapsed(DRIVER_TIMER2))
+		  {
+			  modem_reset_count++;
+		  }
+	  }
+}
+
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -91,14 +104,17 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  esp8266__initialize();
   timer__initialize(DRIVER_TIMER2);
-  uint16_t count = 0;
 
   if (cmox_initialize(NULL) != CMOX_INIT_SUCCESS)
   {
     Error_Handler();
   }
+
+  wait_ms(1000);
+  HAL_GPIO_WritePin(WIFI_MODEM_RESET_PORT, WIFI_MODEM_RESET_PIN, GPIO_PIN_SET);
+  wait_ms(1000);
+  at_interface__initialize();
 
   /* USER CODE BEGIN 2 */
 
@@ -106,15 +122,16 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  int count = 0;
   while (1)
   {
-	  esp8266__process();
+	  at_interface__process();
 	  if(timer__ms_elapsed(DRIVER_TIMER2))
 	  {
 		  if(++count == 1000)
 		  {
 			  count = 0;
-			  esp8266__send_test_string();
+			  at_interface__send_test_string();
 		  }
 	  }
     /* USER CODE END WHILE */
@@ -192,6 +209,16 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(WIFI_MODEM_RESET_PORT, WIFI_MODEM_RESET_PIN, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : A2 Wiznet360 reset */
+  GPIO_InitStruct.Pin = WIFI_MODEM_RESET_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(WIFI_MODEM_RESET_PORT, &GPIO_InitStruct);
 
   //  // USART1_TX (A9)
   GPIOA->MODER &= ~(3 << 18);
