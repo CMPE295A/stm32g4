@@ -30,7 +30,7 @@ static void start_clock(void) {
 	RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN; // Enable GPIOA clock
 	RCC->APB2ENR |= RCC_APB2ENR_TIM1EN; // Enable TIM1 clock
 }
-static void timer__set_pwm_configuration(void) {
+static void timer_1__set_pwm_configuration(void) {
     // Configure channel 1 for PWM mode 1
     TIM1->CCMR1 &= ~TIM_CCMR1_OC1M;
 
@@ -50,7 +50,7 @@ static void timer__set_pwm_configuration(void) {
     TIM1->CR2 &= ~TIM_CR2_OIS1;
 }
 
-void timer__initialize(void) {
+void timer_1__initialize(void) {
 	set_gpio_pins();
 	start_clock();
 	TIM1->CR1 = 0;
@@ -72,7 +72,7 @@ void timer__initialize(void) {
 	// Disable the master-slave mode
 	TIM1->SMCR &= ~TIM_SMCR_MSM;
 
-	timer__set_pwm_configuration();
+	timer_1__set_pwm_configuration();
 
 	TIM1->CCMR1 |= (0x6 << TIM_CCMR1_OC1M_Pos) | (0x1 << TIM_CCMR1_OC1PE_Pos); // Mode 1; channel 1 active when TIMx_CNT<TIMx_CCR1
 	TIM1->EGR |= TIM_EGR_UG; // Reinitialize the counter
@@ -80,13 +80,13 @@ void timer__initialize(void) {
 //	TIM1->DIER |= TIM_DIER_UIE; // Enable timer interrupt
 }
 
-void timer__set_duty_cycle(float duty_cycle_in_percent){
+void timer_1__set_duty_cycle(float duty_cycle_in_percent){
 	uint32_t counts_per_cycle = TIM1->ARR + 1;
 	uint32_t duty_cycle_raw = (duty_cycle_in_percent * counts_per_cycle) / 100;
 	TIM1->CCR1 = duty_cycle_raw;
 }
 
-void timer__set_frequency(float pwm_frequency_Hz) {
+void timer_1__set_frequency(float pwm_frequency_Hz) {
 	uint32_t counts_per_cycle = (timer_clock_frequency_Hz / pwm_frequency_Hz) - 1;
 	TIM1->ARR = counts_per_cycle;
 }

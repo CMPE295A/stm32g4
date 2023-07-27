@@ -5,7 +5,7 @@
  *      Author: Jasdip Sekhon
  */
 
-#include "i2c.h"
+#include "driver_i2c.h"
 
 volatile i2c_state_e i2c_state = I2C__STATE_IDLE;
 static uint8_t received_data;
@@ -337,8 +337,8 @@ bool i2c__detect(void) {
     return detected;
 }
 
-uint8_t i2c__read_slave_data_state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t register_address, uint32_t number_of_bytes) {
-    *i2c_state = I2C__STATE_START;
+uint8_t i2c__read_slave_data_state_machine(i2c_state_e i2c_state, uint8_t slave_address, uint8_t register_address, uint32_t number_of_bytes) {
+    i2c_state = I2C__STATE_START;
     I2C1->CR1 |= I2C_CR1_RXIE | I2C_CR1_TCIE | I2C_CR1_STOPIE | I2C_CR1_NACKIE | I2C_CR1_ERRIE; // Enable I2C interrupts
     i2c__state_machine(slave_address, register_address, number_of_bytes); // Send data to slave
     while (i2c_state != I2C__STATE_IDLE); // Wait for completion

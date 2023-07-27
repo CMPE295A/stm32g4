@@ -1,4 +1,6 @@
 #include "sensor.h"
+#include "stm32g4xx_hal_i2c.h"
+//#include "stm32g431xx.h"
 
 #define MPU6050_ADDR 0xD0
 #define SMPLRT_DIV_REG 0x19
@@ -104,7 +106,7 @@ void sensor__get_gyro(void)
 	HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), HAL_MAX_DELAY);
 }
 
-void Error_Handler(void)
+void sensor_Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */

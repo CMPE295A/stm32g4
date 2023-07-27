@@ -36,13 +36,13 @@ bool i2c__detect(void);
  */
 uint8_t i2c__read_slave_data(uint8_t slave_address, uint8_t register_address);
 
-uint8_t i2c__read_slave_data_state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t register_address, uint32_t number_of_bytes);
+uint8_t i2c__read_slave_data_state_machine(i2c_state_e i2c_state, uint8_t slave_address, uint8_t register_address, uint32_t number_of_bytes);
 
 /**
  * Writes multiple registers of the slave_address
  */
 void i2c__write_slave_data(uint8_t slave_address, uint8_t register_address, uint8_t data);
 
-void i2c__state_machine(i2c_state_e *i2c_state, uint8_t slave_address, uint8_t register_address, uint32_t bytes_to_read);
+void i2c__state_machine(uint8_t slave_address, uint8_t register_address, uint32_t bytes_to_read);
 
 void I2C1_EV_IRQHandler(void);

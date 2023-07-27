@@ -7,5 +7,5 @@
 void sensor__init(void);
 void sensor__get_accel(void);
 void sensor__get_gyro(void);
-void Error_Handler(void);
+void sensor_Error_Handler(void);
 

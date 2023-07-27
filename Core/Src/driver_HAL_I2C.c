@@ -4,7 +4,7 @@
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void)
+void i2c_SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
@@ -22,7 +22,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-    Error_Handler();
+    i2c_Error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
@@ -36,7 +36,7 @@ void SystemClock_Config(void)
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
-    Error_Handler();
+    i2c_Error_Handler();
   }
 }
 
@@ -45,7 +45,7 @@ void SystemClock_Config(void)
   * @param None
   * @retval None
   */
-void MX_GPIO_Init(void)
+void i2c_MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
@@ -89,11 +89,11 @@ void MX_I2C1_Init(void)
   i2c1.NoStretchMode = I2C_NOSTRETCH_DISABLE;
   if (HAL_I2C_Init(&i2c1) != HAL_OK)
   {
-    Error_Handler();
+    i2c_Error_Handler();
   }
 }
 
-void Error_Handler(void)
+void i2c_Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
