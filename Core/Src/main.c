@@ -68,6 +68,14 @@ static void process_cli(void);
   * @brief  The application entry point.
   * @retval int
   */
+typedef struct{
+	  float lat;
+	  float lon;
+	  float battery;
+	  float temperature;
+}drone_status_t;
+
+static const drone_status_t test_data = {.lat=37.3387, .lon=-121.8853, .battery=45.0, .temperature=21.1};
 
 void wait_ms(int ms_wait_threshold)
 {
@@ -79,6 +87,16 @@ void wait_ms(int ms_wait_threshold)
 			  modem_reset_count++;
 		  }
 	  }
+}
+
+void get_drone_status(drone_status_t *status)
+{
+	*status = test_data;
+}
+
+int get_drone_status_string(drone_status_t *status, char *str)
+{
+	return sprintf(str, "\"{\"GPS\":[%.4f, %.4f],\"Battery\":%.1f%,\"Temperature\":%.1fC}\"", status->lat, status->lon, status->battery, status->temperature);
 }
 
 int main(void)
@@ -124,7 +142,9 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int count = 0;
-  static const char TEST_STRING[] = "\"{\"GPS\":[37.3387,-121.8853],\"Battery\":45%,\"Temperature\": 21.1C}\"";
+
+  char data_string[100];
+//  static const char TEST_STRING[] = "\"{\"GPS\":[37.3387,-121.8853],\"Battery\":45%,\"Temperature\": 21.1C}\"";
   while (1)
   {
 	  bool ms_elapsed = false;
@@ -136,7 +156,11 @@ int main(void)
 		  {
 			  count = 0;
 //			  at_interface__publish_test();
-			  mqtt__publish(TEST_STRING, strlen(TEST_STRING));
+			  drone_status_t data = {0};
+			  get_drone_status(&data);
+			  get_drone_status_string(&data, data_string);
+			  // encrypt string
+			  mqtt__publish(data_string, strlen(data_string));
 		  }
 	  }
 	  at_interface__process(ms_elapsed);
