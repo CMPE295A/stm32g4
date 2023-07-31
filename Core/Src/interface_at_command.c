@@ -5,6 +5,7 @@
 
 #include "interface_at_command.h"
 #include "driver_uart.h"
+#include "interface_mqtt.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -18,36 +19,38 @@ static const char AT_CMD_ECHO_OFF[] = "ATE0\r\n";
 static const char AT_CMD_TEST[] = "AT\r\n";
 static const char AT_CMD_MODE[] = "AT+CWMODE_CUR=1\r\n";
 static const char AT_CMD_LIST_AP[] = "AT+CWLAP\r\n";
-//static const char AT_CMD_SSID[] = "AT+CWJAP_CUR=\"MyBaloneysFirstName\",\"BernieLocke\",\"ce:9e:43:c4:13:ed\"\r\n";
-static const char AT_CMD_SSID[] = "AT+CWJAP_CUR=\"scott_hotspot\",\"20jack23\",\"02:5d:52:2f:07:b5\"\r\n";
+static const char AT_CMD_SSID[] = "AT+CWJAP_CUR=\"MyBaloneysFirstName\",\"BernieLocke\",\"c8:9e:43:c3:88:26\"\r\n";
+//static const char AT_CMD_SSID[] = "AT+CWJAP_CUR=\"scott_hotspot\",\"20jack23\",\"02:5d:52:2f:07:b5\"\r\n";
 static const char AT_CMD_DHCP[] = "AT+CWDHCP_CUR=1,1\r\n";
+static const char AT_CMD_RESTORE[]= "AT+RESTORE=1\r\n";
 
-static const char AT_CMD_MQTT_SETUP[] = "AT+MQTTSET=\"username\",\"passwd\",\"D1\",60\r\n";
-static const char AT_CMD_MQTT_TOPIC_STATUS[] = "AT+MQTTTOPIC=\"drone/1/status\",\"SUB_TOPIC\"";
-static const char AT_CMD_MQTT_TOPIC_GPS[] = "AT+MQTTTOPIC=\"drone/1/gps\",\"SUB_TOPIC\"";
-static const char AT_CMD_MQTT_TOPIC_BATTERY[] = "AT+MQTTTOPIC=\"drone/1/battery\",\"SUB_TOPIC\"";
-static const char AT_CMD_MQTT_TOPIC_TEMPERATURE[] = "AT+MQTTTOPIC=\"drone/1/temperature\",\"SUB_TOPIC\"";
-static const char AT_CMD_MQTT_CONNECT[] = "AT+MQTTCON=0,\"192.168.0.160\",1883";
-static const char AT_CMD_MQTT_PULBLISH[] = "AT+MQTTPUB=";
+static const char AT_CMD_MQTT_SETUP[] = "AT+MQTTSET=\"scott\",\"scott\",\"D1\",60\r\n";
+static const char AT_CMD_MQTT_TOPIC_STATUS[] = "AT+MQTTTOPIC=\"drone/1/status\",\"SUB_TOPIC\"\r\n";
+static const char AT_CMD_MQTT_CONNECT[] = "AT+MQTTCON=0,\"192.168.1.12\",1883\r\n";
+static const char AT_CMD_MQTT_PUBLISH_TEST[] = "AT+MQTTPUB=\"TESTING\"\r\n";
+static const char AT_CMD_MQTT_PUBLISH_PREFIX[] = "AT+MQTTPUB=";
 
-//static const char AT_CMD_SSID[] = "AT+CWJAP=\"Scott's iPhone\",\"MarlinBrando\"\r\n";
 static const char AT_CMD_CONNECT[] = "AT+CIPSTART=\"UDP\",\"192.168.73.160\",50103,50108,0\r\n";
-static const char AT_CMD_SEND_PREFIX[] = "AT+CIPSEND=";
+static const char AT_CMD_SEND_PREFIX[] = "AT+CIPSEND=\"";
 static const char AT_CMD_SEND_TEST[] = "AT+CIPSEND=12\r\n";
 
 static const char AT_RESPONSE_OK[] = "OK";
+static const char AT_RESPONSE_GOT_IP[] = "WIFI GOT IP";
 static const char AT_RESPONSE_SEND_OK[] = "SEND_OK";
+static const char AT_RESPONSE_READY[] = "ready";
 
 static const char AT_CMD_ENDING[] = "\r\n";
 
 static const char TEST_STRING1[] = "HELLO WORLD1";
 static const char TEST_STRING2[] = "HELLO WORLD2";
 
-static uint16_t state = AT_INTERFACE_ECHO_OFF;
+static uint16_t state = AT_INTERFACE_INIT;
+static uint16_t last_state = AT_INTERFACE_INIT;
 
 static void read(void);
 static bool line_is(const char *str);
 static void send_at_cmd(const char *cmd);
+static void transition(const char *next_cmd, uint8_t next_state);
 
 static char line_buffer[LINE_BUFFER_MAX][LINE_MAX_LEN];
 static char *line = &line_buffer[0][0];
@@ -55,6 +58,8 @@ static char *last_line = (char*)EMPTY_LINE;
 static uint16_t next_line = 1;
 static uint16_t char_index = 0;
 static uint32_t send_count = 0;
+static bool ms_tick = 0;
+static bool start_transition = false;
 
 
 
@@ -62,89 +67,139 @@ bool at_interface__initialize(void)
 {
 	// connect to esp8266
 	bool initialized = uart__initialize(AT_MODEM_UART, 115200);
-	send_at_cmd(AT_CMD_ECHO_OFF);
-//	send_at_cmd(AT_CMD_TEST);
+	send_at_cmd(AT_CMD_RESTORE);
 	return initialized;
 }
 
-void at_interface__process(void)
+void at_interface__process(bool ms_elapsed)
 {
 	// called at user level fast loop
 	read();
+	ms_tick = ms_elapsed;
 
 	switch(state)
 	{
-	case AT_INTERFACE_ECHO_OFF:
-		if(line_is(AT_RESPONSE_OK))
+	case AT_INTERFACE_INIT:
+		if(line_is(AT_RESPONSE_READY) && !start_transition)
 		{
-			send_at_cmd(AT_CMD_TEST);
-			state = AT_INTERFACE_TEST;
+			start_transition = true;
+		}
+		if(start_transition)
+		{
+			transition(AT_CMD_ECHO_OFF, AT_INTERFACE_ECHO_OFF);
+		}
+		break;
+
+	case AT_INTERFACE_ECHO_OFF:
+		if(line_is(AT_RESPONSE_OK) && !start_transition)
+		{
+			start_transition = true;
+		}
+		if(start_transition)
+		{
+			transition(AT_CMD_TEST, AT_INTERFACE_TEST);
 		}
 		break;
 
 	case AT_INTERFACE_TEST:
-		if(line_is(AT_RESPONSE_OK))
+		if(line_is(AT_RESPONSE_OK) && !start_transition)
 		{
-			send_at_cmd(AT_CMD_MODE);
-			state = AT_INTERFACE_MODE;
+			start_transition = true;
+		}
+		if(start_transition)
+		{
+			transition(AT_CMD_MODE, AT_INTERFACE_MODE);
 		}
 		break;
 
 	case AT_INTERFACE_MODE:
-		if(line_is(AT_RESPONSE_OK))
+		if(line_is(AT_RESPONSE_OK) && !start_transition)
 		{
-			send_at_cmd(AT_CMD_DHCP);
-			state = AT_INTERFACE_SET_DHCP;
+			start_transition = true;
+		}
+		if(start_transition)
+		{
+			transition(AT_CMD_DHCP, AT_INTERFACE_SET_DHCP);
 		}
 		break;
 
 	case AT_INTERFACE_SET_DHCP:
-		if(line_is(AT_RESPONSE_OK))
+		if(line_is(AT_RESPONSE_OK) && !start_transition)
 		{
-			send_at_cmd(AT_CMD_LIST_AP);
-			state = AT_INTERFACE_LIST_AP;
+			start_transition = true;
+		}
+		if(start_transition)
+		{
+			transition(AT_CMD_SSID, AT_INTERFACE_SSID);
 		}
 		break;
 
-	case AT_INTERFACE_LIST_AP:
-		if(line_is(AT_RESPONSE_OK))
-		{
-			send_at_cmd(AT_CMD_SSID);
-			state = AT_INTERFACE_SSID;
-		}
-		break;
+//	case AT_INTERFACE_LIST_AP:
+//		if(line_is(AT_RESPONSE_OK) && !start_transition)
+//		{
+//			start_transition = true;
+//		}
+//		if(start_transition)
+//		{
+//			transition(AT_CMD_SSID, AT_INTERFACE_SSID);
+//		}
+//		break;
 
 	case AT_INTERFACE_SSID:
-		if(line_is(AT_RESPONSE_OK))
+		if(line_is(AT_RESPONSE_GOT_IP) && !start_transition)
 		{
-			send_at_cmd(AT_CMD_CONNECT);
-			state = AT_INTERFACE_CONNECT;
+			start_transition = true;
+		}
+		if(start_transition)
+		{
+			transition(AT_CMD_MQTT_SETUP, AT_INTERFACE_MQTT_SETUP);
 		}
 		break;
 
-	case AT_INTERFACE_CONNECT:
-		if(line_is(AT_RESPONSE_OK))
-		{
-			send_at_cmd(AT_CMD_MQTT_SETUP);
-			state = AT_INTERFACE_MQTT_SETUP;
-		}
-		break;
+//	case AT_INTERFACE_CONNECT:
+//		if(line_is(AT_RESPONSE_OK) && ! start_transition)
+//		{
+//			start_transition = true;
+//		}
+//		if(start_transition)
+//		{
+//
+//			transition(AT_CMD_MQTT_SETUP, AT_INTERFACE_MQTT_SETUP);
+//		}
+//		break;
 
 	case AT_INTERFACE_MQTT_SETUP:
-		if(line_is(AT_RESPONSE_OK))
+		if(line_is(AT_RESPONSE_OK) && !start_transition)
 		{
-			send_at_cmd(AT_CMD_MQTT_CONNECT);
-			state = AT_INTERFACE_MQTT_CONNECT;
+			start_transition = true;
 		}
+		if(start_transition)
+		{
+			transition(AT_CMD_MQTT_TOPIC_STATUS, AT_INTERFACE_MQTT_SET_TOPIC);
+		}
+		break;
+
+	case AT_INTERFACE_MQTT_SET_TOPIC:
+		if(line_is(AT_RESPONSE_OK) && !start_transition)
+		{
+			start_transition = true;
+		}
+		if(start_transition)
+		{
+			transition(AT_CMD_MQTT_CONNECT, AT_INTERFACE_MQTT_CONNECT);
+		}
+		break;
 
 	case AT_INTERFACE_MQTT_CONNECT:
 		if(line_is(AT_RESPONSE_OK))
 		{
+			last_state = state;
 			state = AT_INTERFACE_NETWORK_UP;
 		}
+		break;
 
 	case AT_INTERFACE_NETWORK_UP:
-		if(line_is(AT_RESPONSE_SEND_OK))
+		if(line_is(AT_RESPONSE_OK))
 		{
 			send_count++;
 		}
@@ -158,6 +213,14 @@ void at_interface__process(void)
 void at_interface_get_packet(char *packet, uint16_t size)
 {
 	// pull last packet from buffer
+}
+
+void at_interface__publish_test(void)
+{
+	if(state == AT_INTERFACE_NETWORK_UP)
+	{
+		send_at_cmd(AT_CMD_MQTT_PUBLISH_TEST);
+	}
 }
 
 void at_interface__send_test_string(void)
@@ -215,6 +278,30 @@ void at_interface__send_string(char *str)
 	}
 }
 
+bool at_interface__publish_string(char *str)
+{
+	bool sent = false;
+	if(state == AT_INTERFACE_NETWORK_UP)
+	{
+		uint16_t prefix_len = strlen(AT_CMD_MQTT_PUBLISH_PREFIX);
+		uint16_t suffix_len = strlen(AT_CMD_ENDING);
+		uint16_t str_len = strlen(str);
+		if(str_len < (LINE_MAX_LEN - (prefix_len + suffix_len)))
+		{
+			char cmd_string[LINE_MAX_LEN] = {0};
+			memcpy(cmd_string, AT_CMD_MQTT_PUBLISH_PREFIX, prefix_len);
+			uint16_t index = prefix_len;
+			memcpy(&cmd_string[index], str, str_len);
+			index += str_len;
+
+			memcpy(&cmd_string[index], AT_CMD_ENDING, suffix_len);
+			send_at_cmd(cmd_string);
+			sent = true;
+		}
+	}
+	return sent;
+}
+
 static bool line_is(const char *str)
 {
 	bool match = false;
@@ -261,4 +348,23 @@ static void send_at_cmd(const char *cmd)
 {
 	uint16_t len = strlen(cmd);
 	uart__put(AT_MODEM_UART, (uint8_t*)cmd, len);
+}
+
+static void transition(const char *next_cmd, uint8_t next_state)
+{
+	static uint16_t send_delay_count = 0;
+
+	if(ms_tick)
+	{
+		send_delay_count++;
+	}
+
+	if(send_delay_count > AT_INTERFACE_SEND_DELAY_MS)
+	{
+		send_at_cmd(next_cmd);
+		last_state = state;
+		state = next_state;
+		send_delay_count = 0;
+		start_transition = false;
+	}
 }

@@ -22,6 +22,7 @@
 #include "driver_timer.h"
 #include "cmox_crypto.h"
 #include "interface_at_command.h"
+#include "interface_mqtt.h"
 #include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -123,17 +124,22 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int count = 0;
+  static const char TEST_STRING[] = "\"{\"GPS\":[37.3387,-121.8853],\"Battery\":45%,\"Temperature\": 21.1C}\"";
   while (1)
   {
-	  at_interface__process();
+	  bool ms_elapsed = false;
 	  if(timer__ms_elapsed(DRIVER_TIMER2))
 	  {
+		  ms_elapsed = true;
+		  mqtt__process();
 		  if(++count == 1000)
 		  {
 			  count = 0;
-			  at_interface__send_test_string();
+//			  at_interface__publish_test();
+			  mqtt__publish(TEST_STRING, strlen(TEST_STRING));
 		  }
 	  }
+	  at_interface__process(ms_elapsed);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
