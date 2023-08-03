@@ -123,7 +123,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  timer__initialize(DRIVER_TIMER2);
+  timer__initialize(DRIVER_TIMER2, TIMER_MS_PER_SECOND);
 
   if (cmox_initialize(NULL) != CMOX_INIT_SUCCESS)
   {
@@ -145,15 +145,23 @@ int main(void)
 
   char data_string[100];
 //  static const char TEST_STRING[] = "\"{\"GPS\":[37.3387,-121.8853],\"Battery\":45%,\"Temperature\": 21.1C}\"";
+  uint32_t start_us = 0;
+  uint32_t end_us= 0;
+  uint32_t duration_us = 0;
   while (1)
   {
 	  bool ms_elapsed = false;
 	  if(timer__ms_elapsed(DRIVER_TIMER2))
 	  {
+		  if(start_us > 0)
+		  {
+			  duration_us = end_us - start_us;
+		  }
 		  ms_elapsed = true;
 		  mqtt__process();
 		  if(++count == 1000)
 		  {
+
 			  count = 0;
 //			  at_interface__publish_test();
 			  drone_status_t data = {0};
