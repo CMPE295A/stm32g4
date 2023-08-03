@@ -142,6 +142,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int count = 0;
+  static const char test_string_aws[] = "\"{\"status\":\"c0f958353c5af040db056247f4d7dd9f\",\"gps\":{\"latitude\":\"test\",\"longitude\":\"10f4678d15f185427e2911791d751b8f\"},\"batteryLevel\":\"ca74ca2f55cbe7f92789a704ff686c2f\",\"temperature\":\"ca74ca2f55cbe7f92789a704ff686c2f\"}\"";
 
   char data_string[100];
 //  static const char TEST_STRING[] = "\"{\"GPS\":[37.3387,-121.8853],\"Battery\":45%,\"Temperature\": 21.1C}\"";
@@ -168,7 +169,7 @@ int main(void)
 			  get_drone_status(&data);
 			  get_drone_status_string(&data, data_string);
 			  // encrypt string
-			  mqtt__publish(data_string, strlen(data_string));
+			  mqtt__publish(test_string_aws, strlen(test_string_aws));
 		  }
 	  }
 	  at_interface__process(ms_elapsed);

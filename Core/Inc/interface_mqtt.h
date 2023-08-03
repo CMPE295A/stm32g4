@@ -2,7 +2,7 @@
 #include "stdbool.h"
 #include "stdint.h"
 
-#define MAX_MQTT_PUB_BUFFER_BYTES 128
+#define MAX_MQTT_PUB_BUFFER_BYTES 512
 #define MQTT_PUBLISH_TIMEOUT_MS (10 * 1000)
 
 //bool connect(void);
